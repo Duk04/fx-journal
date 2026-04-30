@@ -1,0 +1,54 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Trade {
+  id            Int       @id @default(autoincrement())
+  pair          String
+  direction     String
+  entryPrice    Float     @map("entry_price")
+  exitPrice     Float?    @map("exit_price")
+  lotSize       Float     @map("lot_size")
+  sl            Float?
+  tp            Float?
+  openedAt      DateTime  @map("opened_at")
+  closedAt      DateTime? @map("closed_at")
+  pnl           Float?
+  rr            Float?
+  notes         String?
+  tags          String    @default("[]")
+  screenshotUrl String?   @map("screenshot_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  journal  JournalEntry[]
+  analysis AnalysisCache?
+
+  @@map("trades")
+}
+
+model JournalEntry {
+  id        Int      @id @default(autoincrement())
+  tradeId   Int?     @map("trade_id")
+  content   String
+  mood      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  trade Trade? @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+
+  @@map("journal_entries")
+}
+
+model AnalysisCache {
+  tradeId  Int      @id @map("trade_id")
+  result   String
+  cachedAt DateTime @map("cached_at")
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_cache")
+}

@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Base */
+* { box-sizing: border-box; }
+
+body {
+  background: #0a0e1a;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Inputs */
+.input {
+  background: rgba(255,255,255,0.05);
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  width: 100%;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.input:focus {
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.05);
+}
+.input option { background: #1e2537; }
+
+/* Cards */
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+.card-hover:hover {
+  border-color: rgba(59,130,246,0.3);
+  background: rgba(59,130,246,0.03);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
