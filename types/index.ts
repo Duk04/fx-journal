@@ -1,5 +1,9 @@
 export type Direction = 'BUY' | 'SELL'
-export type TradePair = 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'XAUUSD' | string
+export type TradePair =
+  | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCHF' | 'USDCAD' | 'AUDUSD' | 'NZDUSD'
+  | 'EURJPY' | 'GBPJPY' | 'EURGBP' | 'AUDJPY' | 'EURAUD'
+  | 'XAUUSD' | 'XAGUSD' | 'BTCUSD' | 'ETHUSD'
+  | string
 export type Mood = 'confident' | 'uncertain' | 'fearful' | 'greedy'
 
 export interface Trade {

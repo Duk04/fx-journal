@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite'
 import path from 'path'
 import fs from 'fs'
+import { scryptSync, randomBytes, timingSafeEqual } from 'crypto'
 
 type Param = string | number | null | bigint
 
@@ -14,7 +15,6 @@ export function dbAll<T>(db: DatabaseSync, sql: string, ...params: Param[]): T[]
 
 const DB_PATH = path.join(process.cwd(), 'prisma', 'dev.db')
 
-// Ensure prisma directory exists
 const dir = path.dirname(DB_PATH)
 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
 
@@ -26,6 +26,21 @@ export function getDb(): DatabaseSync {
     initSchema(_db)
   }
   return _db
+}
+
+export function hashPassword(pw: string): string {
+  const salt = randomBytes(16).toString('hex')
+  return salt + ':' + scryptSync(pw, salt, 64).toString('hex')
+}
+
+export function checkPassword(pw: string, stored: string): boolean {
+  try {
+    const [salt, hash] = stored.split(':')
+    const derived = scryptSync(pw, salt, 64)
+    return timingSafeEqual(derived, Buffer.from(hash, 'hex'))
+  } catch {
+    return false
+  }
 }
 
 function initSchema(db: DatabaseSync) {
@@ -62,13 +77,47 @@ function initSchema(db: DatabaseSync) {
       result TEXT NOT NULL,
       cached_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
+
+  seedUsers(db)
+
+  // Migrations: add user_id columns if not present yet
+  try { db.exec('ALTER TABLE trades ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
+  try { db.exec('ALTER TABLE journal_entries ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
+
+  // Assign any legacy rows (from before auth) to the first user
+  const first = db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get() as { id: number } | undefined
+  if (first) {
+    db.exec(`UPDATE trades SET user_id = ${first.id} WHERE user_id IS NULL`)
+    db.exec(`UPDATE journal_entries SET user_id = ${first.id} WHERE user_id IS NULL`)
+  }
+}
+
+function seedUsers(db: DatabaseSync) {
+  const { c } = db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }
+  if (c > 0) return
+
+  const users = [
+    { name: process.env.USER1_NAME ?? 'trader1', pass: process.env.USER1_PASS ?? 'pass1' },
+    { name: process.env.USER2_NAME ?? 'trader2', pass: process.env.USER2_PASS ?? 'pass2' },
+  ]
+
+  const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)')
+  for (const u of users) stmt.run(u.name, hashPassword(u.pass))
 }
 
 // ── Trades ────────────────────────────────────────────────────────────────────
 
 export interface TradeRow {
   id: number
+  user_id: number | null
   pair: string
   direction: string
   entry_price: number
@@ -114,6 +163,7 @@ export function rowToTrade(r: TradeRow): Trade {
 export interface JournalRow {
   id: number
   trade_id: number | null
+  user_id: number | null
   content: string
   mood: string | null
   created_at: string
@@ -127,4 +177,13 @@ export function rowToJournal(r: JournalRow) {
     mood: r.mood,
     createdAt: r.created_at,
   }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export interface UserRow {
+  id: number
+  username: string
+  password_hash: string
+  created_at: string
 }

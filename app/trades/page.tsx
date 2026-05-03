@@ -4,8 +4,14 @@ import { useTrades, useDeleteTrade } from '@/hooks/use-trades'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import type { Trade } from '@/types'
+import { Filter, Trash2, ArrowUpRight } from 'lucide-react'
 
-const PAIRS = ['', 'EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD']
+const PAIRS = [
+  '',
+  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'USDCAD', 'AUDUSD', 'NZDUSD',
+  'EURJPY', 'GBPJPY', 'EURGBP', 'AUDJPY', 'EURAUD',
+  'XAUUSD', 'XAGUSD', 'BTCUSD', 'ETHUSD',
+]
 
 export default function TradesPage() {
   const [pair, setPair] = useState('')
@@ -26,18 +32,22 @@ export default function TradesPage() {
   const hasFilters = !!(pair || direction || status || dateFrom || dateTo)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Trades</h1>
-          <p style={{ color: 'rgba(226,232,240,0.4)', fontSize: '0.85rem', marginTop: 4 }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>Trades</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 3 }}>
             {trades.length} {hasFilters ? 'filtered' : 'total'} trade{trades.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', marginRight: 4 }}>
+          <Filter size={14} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filter</span>
+        </div>
         <select value={pair} onChange={e => setPair(e.target.value)} className="input" style={{ width: 'auto' }}>
           {PAIRS.map(p => <option key={p} value={p}>{p || 'All Pairs'}</option>)}
         </select>
@@ -51,87 +61,94 @@ export default function TradesPage() {
           <option value="open">Open</option>
           <option value="closed">Closed</option>
         </select>
-        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="input" style={{ width: 'auto' }} />
-        <span style={{ color: 'rgba(226,232,240,0.3)', fontSize: '0.85rem' }}>—</span>
-        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="input" style={{ width: 'auto' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="input" style={{ width: 'auto' }} />
+          <span style={{ color: 'var(--text-faint)', fontSize: '0.8rem' }}>–</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="input" style={{ width: 'auto' }} />
+        </div>
         {hasFilters && (
           <button onClick={() => { setPair(''); setDirection(''); setStatus(''); setDateFrom(''); setDateTo('') }}
-            style={{ padding: '0.4rem 0.75rem', borderRadius: 6, fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }}>
+            className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}>
             Clear
           </button>
         )}
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[1,2,3,4,5].map(i => <div key={i} style={{ height: 52, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 52 }} />)}
         </div>
       ) : trades.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-          <p style={{ fontSize: '2rem', marginBottom: 12 }}>🗂️</p>
-          <p style={{ color: 'rgba(226,232,240,0.5)', marginBottom: 16 }}>
-            {hasFilters ? 'No trades match your filters.' : 'No trades yet. Add your first trade!'}
+        <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem' }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12, margin: '0 auto 12px',
+            background: '#ede9fe', border: '1px solid #ddd6fe',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Filter size={20} color="#7c3aed" />
+          </div>
+          <p style={{ fontWeight: 600, marginBottom: 6, color: '#0f172a' }}>{hasFilters ? 'No matching trades' : 'No trades yet'}</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20 }}>
+            {hasFilters ? 'Try adjusting your filters.' : 'Start tracking your forex trades.'}
           </p>
-          {!hasFilters && (
-            <Link href="/trades/new" style={{
-              display: 'inline-block', padding: '0.6rem 1.5rem', borderRadius: 8,
-              background: 'linear-gradient(135deg, #2563eb, #4f46e5)', color: '#fff',
-              textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
-            }}>
-              Add Trade
-            </Link>
-          )}
+          {!hasFilters && <Link href="/trades/new" className="btn btn-primary">Add Trade</Link>}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid var(--border)', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border)', background: '#f8fafc' }}>
                 {['Pair', 'Dir', 'Entry', 'Exit', 'Lots', 'P&L', 'R:R', 'Tags', 'Date', ''].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.75rem 1rem', color: 'rgba(226,232,240,0.4)', fontWeight: 500, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '0.75rem 1rem',
+                    color: 'var(--text-faint)', fontWeight: 600,
+                    fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap',
+                  }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {trades.map((t: Trade, i: number) => (
-                <tr key={t.id} style={{
-                  borderBottom: i < trades.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                  transition: 'background 0.1s',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                <tr key={t.id}
+                  style={{ borderBottom: i < trades.length - 1 ? '1px solid #f1f5f9' : 'none', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t.pair}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span style={{
-                      padding: '0.2rem 0.6rem', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600,
-                      background: t.direction === 'BUY' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                      color: t.direction === 'BUY' ? '#4ade80' : '#f87171',
-                      border: `1px solid ${t.direction === 'BUY' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-                    }}>{t.direction}</span>
+                  <td style={{ padding: '0.8rem 1rem', fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>{t.pair}</td>
+                  <td style={{ padding: '0.8rem 1rem' }}>
+                    <span className={`badge ${t.direction === 'BUY' ? 'badge-buy' : 'badge-sell'}`}>{t.direction}</span>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.82rem' }}>{t.entryPrice}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.82rem', color: t.exitPrice ? '#e2e8f0' : 'rgba(226,232,240,0.3)' }}>{t.exitPrice ?? '—'}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.82rem' }}>{t.lotSize}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, fontFamily: 'monospace', fontSize: '0.82rem', color: t.pnl === null ? 'rgba(226,232,240,0.3)' : t.pnl >= 0 ? '#4ade80' : '#f87171' }}>
+                  <td style={{ padding: '0.8rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#475569' }}>{t.entryPrice}</td>
+                  <td style={{ padding: '0.8rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: t.exitPrice ? '#475569' : '#cbd5e1' }}>{t.exitPrice ?? '—'}</td>
+                  <td style={{ padding: '0.8rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#475569' }}>{t.lotSize}</td>
+                  <td style={{ padding: '0.8rem 1rem', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.85rem', color: t.pnl === null ? '#cbd5e1' : t.pnl >= 0 ? '#16a34a' : '#dc2626' }}>
                     {t.pnl !== null ? formatCurrency(t.pnl) : '—'}
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.82rem', color: 'rgba(226,232,240,0.6)' }}>{t.rr !== null ? t.rr.toFixed(2) : '—'}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <td style={{ padding: '0.8rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#64748b' }}>{t.rr !== null ? t.rr.toFixed(2) : '—'}</td>
+                  <td style={{ padding: '0.8rem 1rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                       {t.tags.slice(0, 2).map(tag => (
-                        <span key={tag} style={{ padding: '0.15rem 0.5rem', borderRadius: 4, fontSize: '0.72rem', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)' }}>{tag}</span>
+                        <span key={tag} className="badge badge-tag">{tag}</span>
                       ))}
-                      {t.tags.length > 2 && <span style={{ fontSize: '0.72rem', color: 'rgba(226,232,240,0.3)' }}>+{t.tags.length - 2}</span>}
+                      {t.tags.length > 2 && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>+{t.tags.length - 2}</span>}
                     </div>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', color: 'rgba(226,232,240,0.4)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{formatDate(t.openedAt)}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <Link href={`/trades/${t.id}`} style={{ color: '#60a5fa', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}>View</Link>
-                      <button onClick={() => { if (confirm('Delete this trade?')) deleteTrade.mutate(t.id) }}
-                        style={{ color: '#f87171', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 500 }}>
-                        Delete
+                  <td style={{ padding: '0.8rem 1rem', color: '#94a3b8', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{formatDate(t.openedAt)}</td>
+                  <td style={{ padding: '0.8rem 1rem' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <Link href={`/trades/${t.id}`} style={{
+                        display: 'flex', alignItems: 'center', gap: 3,
+                        color: '#2563eb', fontSize: '0.78rem', textDecoration: 'none', fontWeight: 500,
+                      }}>
+                        View <ArrowUpRight size={12} />
+                      </Link>
+                      <button
+                        onClick={() => { if (confirm('Delete this trade?')) deleteTrade.mutate(t.id) }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#cbd5e1', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = '#dc2626'}
+                        onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'}
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>

@@ -2,126 +2,233 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCreateTrade } from '@/hooks/use-trades'
+import { Check, Clock, ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
 
-const PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD']
+const PAIRS = [
+  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'USDCAD', 'AUDUSD', 'NZDUSD',
+  'EURJPY', 'GBPJPY', 'EURGBP', 'AUDJPY', 'EURAUD',
+  'XAUUSD', 'XAGUSD', 'BTCUSD', 'ETHUSD',
+]
+const LOT_PRESETS = ['0.01', '0.05', '0.10', '0.25', '0.50', '1.00']
+const TAG_PRESETS = ['breakout', 'trend', 'reversal', 'scalp', 'news', 'range']
+
+function nowLocal() {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 16)
+}
 
 export default function NewTradePage() {
   const router = useRouter()
   const createTrade = useCreateTrade()
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
 
-  const [form, setForm] = useState({
-    pair: 'EURUSD', direction: 'BUY',
-    entryPrice: '', exitPrice: '', lotSize: '', sl: '', tp: '',
-    openedAt: now.toISOString().slice(0, 16), closedAt: '',
-    notes: '', tags: '',
-  })
+  const [pair, setPair] = useState('EURUSD')
+  const [direction, setDirection] = useState<'BUY' | 'SELL'>('BUY')
+  const [entryPrice, setEntryPrice] = useState('')
+  const [exitPrice, setExitPrice] = useState('')
+  const [lotSize, setLotSize] = useState('')
+  const [sl, setSl] = useState('')
+  const [tp, setTp] = useState('')
+  const [openedAt, setOpenedAt] = useState(nowLocal)
+  const [closedAt, setClosedAt] = useState('')
+  const [notes, setNotes] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [isOpen, setIsOpen] = useState(true)
 
-  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(f => ({ ...f, [key]: e.target.value }))
+  const toggleTag = (t: string) =>
+    setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await createTrade.mutateAsync({
-      pair: form.pair, direction: form.direction as 'BUY' | 'SELL',
-      entryPrice: Number(form.entryPrice),
-      exitPrice: form.exitPrice ? Number(form.exitPrice) : null,
-      lotSize: Number(form.lotSize),
-      sl: form.sl ? Number(form.sl) : null,
-      tp: form.tp ? Number(form.tp) : null,
-      openedAt: form.openedAt, closedAt: form.closedAt || null,
-      notes: form.notes || null,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      pair, direction,
+      entryPrice: Number(entryPrice),
+      exitPrice: (!isOpen && exitPrice) ? Number(exitPrice) : null,
+      lotSize: Number(lotSize),
+      sl: sl ? Number(sl) : null,
+      tp: tp ? Number(tp) : null,
+      openedAt,
+      closedAt: (!isOpen && closedAt) ? closedAt : null,
+      notes: notes || null,
+      tags,
     })
     router.push('/trades')
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>New Trade</h1>
-        <p style={{ color: 'rgba(226,232,240,0.4)', fontSize: '0.85rem', marginTop: 4 }}>Record a new position</p>
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
+        <Link href="/trades" style={{ display: 'flex', alignItems: 'center', color: '#64748b', textDecoration: 'none', padding: '0.25rem' }}>
+          <ChevronLeft size={18} />
+        </Link>
+        <div>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>New Trade</h1>
+          <p style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2 }}>Record a position</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {/* Pair & Direction */}
-        <Section title="Position">
+      <form onSubmit={handleSubmit}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+          {/* Pair */}
+          <div>
+            <label style={labelStyle}>Pair</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {PAIRS.map(p => (
+                <button key={p} type="button" onClick={() => setPair(p)} style={{
+                  flex: '0 0 calc(25% - 5px)', minWidth: 0,
+                  padding: '0.45rem 0.25rem', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
+                  background: pair === p ? '#eff6ff' : '#f8fafc',
+                  color: pair === p ? '#2563eb' : '#64748b',
+                  borderColor: pair === p ? '#bfdbfe' : '#e2e8f0',
+                }}>{p}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Direction */}
+          <div>
+            <label style={labelStyle}>Direction</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['BUY', 'SELL'] as const).map(d => (
+                <button key={d} type="button" onClick={() => setDirection(d)} style={{
+                  flex: 1, padding: '0.55rem', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
+                  background: direction === d ? (d === 'BUY' ? '#dcfce7' : '#fee2e2') : '#f8fafc',
+                  color: direction === d ? (d === 'BUY' ? '#15803d' : '#b91c1c') : '#64748b',
+                  borderColor: direction === d ? (d === 'BUY' ? '#bbf7d0' : '#fecaca') : '#e2e8f0',
+                }}>{d}</button>
+              ))}
+            </div>
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
+
+          {/* Entry + Lot */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <Field label="Pair">
-              <select value={form.pair} onChange={set('pair')} className="input">
-                {PAIRS.map(p => <option key={p}>{p}</option>)}
-              </select>
-            </Field>
-            <Field label="Direction">
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['BUY', 'SELL'].map(d => (
-                  <button key={d} type="button" onClick={() => setForm(f => ({ ...f, direction: d }))}
-                    style={{
-                      flex: 1, padding: '0.5rem', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.15s', border: '1px solid',
-                      background: form.direction === d ? (d === 'BUY' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)',
-                      color: form.direction === d ? (d === 'BUY' ? '#4ade80' : '#f87171') : 'rgba(226,232,240,0.5)',
-                      borderColor: form.direction === d ? (d === 'BUY' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)') : 'rgba(255,255,255,0.1)',
-                    }}>{d}</button>
+            <div>
+              <label style={labelStyle}>Entry Price *</label>
+              <input required type="number" step="any" value={entryPrice} onChange={e => setEntryPrice(e.target.value)}
+                className="input" placeholder="1.08500" />
+            </div>
+            <div>
+              <label style={labelStyle}>Lot Size *</label>
+              <input required type="number" step="any" value={lotSize} onChange={e => setLotSize(e.target.value)}
+                className="input" placeholder="0.10" />
+              <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
+                {LOT_PRESETS.map(l => (
+                  <button key={l} type="button" onClick={() => setLotSize(l)} style={{
+                    padding: '0.15rem 0.45rem', borderRadius: 5, fontSize: '0.7rem', fontWeight: 500,
+                    cursor: 'pointer', border: '1px solid',
+                    background: lotSize === l ? '#eff6ff' : '#f8fafc',
+                    color: lotSize === l ? '#2563eb' : '#94a3b8',
+                    borderColor: lotSize === l ? '#bfdbfe' : '#e2e8f0',
+                  }}>{l}</button>
                 ))}
               </div>
-            </Field>
+            </div>
           </div>
-        </Section>
 
-        {/* Prices */}
-        <Section title="Prices">
+          {/* SL + TP */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <Field label="Entry Price *">
-              <input required type="number" step="any" value={form.entryPrice} onChange={set('entryPrice')} className="input" placeholder="1.08500" />
-            </Field>
-            <Field label="Exit Price">
-              <input type="number" step="any" value={form.exitPrice} onChange={set('exitPrice')} className="input" placeholder="Optional" />
-            </Field>
+            <div>
+              <label style={labelStyle}>Stop Loss</label>
+              <input type="number" step="any" value={sl} onChange={e => setSl(e.target.value)}
+                className="input" placeholder="Optional" />
+            </div>
+            <div>
+              <label style={labelStyle}>Take Profit</label>
+              <input type="number" step="any" value={tp} onChange={e => setTp(e.target.value)}
+                className="input" placeholder="Optional" />
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
-            <Field label="Lot Size *">
-              <input required type="number" step="any" value={form.lotSize} onChange={set('lotSize')} className="input" placeholder="0.10" />
-            </Field>
-            <Field label="Stop Loss">
-              <input type="number" step="any" value={form.sl} onChange={set('sl')} className="input" placeholder="1.08000" />
-            </Field>
-            <Field label="Take Profit">
-              <input type="number" step="any" value={form.tp} onChange={set('tp')} className="input" placeholder="1.09500" />
-            </Field>
-          </div>
-        </Section>
 
-        {/* Timing */}
-        <Section title="Timing">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <Field label="Opened At *">
-              <input required type="datetime-local" value={form.openedAt} onChange={set('openedAt')} className="input" />
-            </Field>
-            <Field label="Closed At">
-              <input type="datetime-local" value={form.closedAt} onChange={set('closedAt')} className="input" />
-            </Field>
-          </div>
-        </Section>
+          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
 
-        {/* Notes & Tags */}
-        <Section title="Notes">
-          <Field label="Tags (comma-separated)">
-            <input type="text" value={form.tags} onChange={set('tags')} placeholder="breakout, trend, news" className="input" />
-          </Field>
-          <div style={{ marginTop: '0.75rem' }}>
-            <Field label="Notes">
-              <textarea value={form.notes} onChange={set('notes')} rows={3} className="input" style={{ resize: 'vertical' }} placeholder="Trade rationale, market context, observations..." />
-            </Field>
+          {/* Opened At */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Opened At *</label>
+              <button type="button" onClick={() => setOpenedAt(nowLocal())} style={{
+                display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 500,
+                color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}>
+                <Clock size={11} /> Now
+              </button>
+            </div>
+            <input required type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} className="input" />
           </div>
-        </Section>
 
-        <button type="submit" disabled={createTrade.isPending} style={{
-          padding: '0.75rem', borderRadius: 10, fontSize: '0.95rem', fontWeight: 600,
-          background: 'linear-gradient(135deg, #2563eb, #4f46e5)', color: '#fff',
-          border: 'none', cursor: 'pointer', opacity: createTrade.isPending ? 0.6 : 1, transition: 'opacity 0.15s',
-        }}>
+          {/* Open/Closed toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+            <span style={{
+              width: 18, height: 18, borderRadius: 5, border: '1.5px solid',
+              borderColor: isOpen ? '#e2e8f0' : '#2563eb',
+              background: isOpen ? '#f8fafc' : '#2563eb',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s', flexShrink: 0,
+            }} onClick={() => setIsOpen(v => !v)}>
+              {!isOpen && <Check size={11} color="#fff" strokeWidth={3} />}
+            </span>
+            <span style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>Trade is closed</span>
+          </label>
+
+          {/* Exit fields — shown only when closed */}
+          {!isOpen && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', paddingTop: 4 }}>
+              <div>
+                <label style={labelStyle}>Exit Price</label>
+                <input type="number" step="any" value={exitPrice} onChange={e => setExitPrice(e.target.value)}
+                  className="input" placeholder="1.09200" />
+              </div>
+              <div>
+                <label style={labelStyle}>Closed At</label>
+                <input type="datetime-local" value={closedAt} onChange={e => setClosedAt(e.target.value)} className="input" />
+              </div>
+            </div>
+          )}
+
+          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
+
+          {/* Tags */}
+          <div>
+            <label style={labelStyle}>Tags</label>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {TAG_PRESETS.map(t => {
+                const active = tags.includes(t)
+                return (
+                  <button key={t} type="button" onClick={() => toggleTag(t)} style={{
+                    padding: '0.28rem 0.7rem', borderRadius: 20, fontSize: '0.78rem', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
+                    background: active ? '#ede9fe' : '#f8fafc',
+                    color: active ? '#6d28d9' : '#64748b',
+                    borderColor: active ? '#ddd6fe' : '#e2e8f0',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                    {active && <Check size={10} strokeWidth={3} />}
+                    {t}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={labelStyle}>Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+              className="input" style={{ resize: 'vertical' }}
+              placeholder="Trade rationale, observations..." />
+          </div>
+
+        </div>
+
+        {/* Submit */}
+        <button type="submit" disabled={createTrade.isPending} className="btn btn-primary"
+          style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', fontSize: '0.95rem', justifyContent: 'center', opacity: createTrade.isPending ? 0.6 : 1 }}>
           {createTrade.isPending ? 'Saving...' : 'Save Trade'}
         </button>
       </form>
@@ -129,20 +236,7 @@ export default function NewTradePage() {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="card">
-      <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(226,232,240,0.4)', marginBottom: '0.875rem', fontWeight: 600 }}>{title}</p>
-      {children}
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(226,232,240,0.55)', marginBottom: 6 }}>{label}</label>
-      {children}
-    </div>
-  )
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '0.78rem', fontWeight: 600,
+  color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em',
 }

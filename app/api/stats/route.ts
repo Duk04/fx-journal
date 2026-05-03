@@ -1,9 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb, dbAll, rowToTrade, type TradeRow } from '@/lib/db'
+import { getSession } from '@/lib/auth-server'
 
-export async function GET() {
+export async function GET(_: NextRequest) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = session.u
+
   const db = getDb()
-  const closed = dbAll<TradeRow>(db, 'SELECT * FROM trades WHERE pnl IS NOT NULL ORDER BY opened_at ASC').map(rowToTrade)
+  const closed = dbAll<TradeRow>(db, 'SELECT * FROM trades WHERE user_id = ? AND pnl IS NOT NULL ORDER BY opened_at ASC', userId).map(rowToTrade)
 
   const totalTrades = closed.length
   const wins = closed.filter(t => (t.pnl ?? 0) > 0)

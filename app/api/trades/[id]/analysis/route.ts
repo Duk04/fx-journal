@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb, dbGet, dbAll, rowToTrade, type TradeRow } from '@/lib/db'
 import { analyzeTradeWithClaude } from '@/lib/claude'
+import { getSession } from '@/lib/auth-server'
 import type { JournalEntry } from '@/types'
 import fs from 'fs'
 import path from 'path'
@@ -11,20 +12,22 @@ interface CacheRow { trade_id: number; result: string; cached_at: string }
 interface JournalRow { id: number; trade_id: number | null; content: string; mood: string | null; created_at: string }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const tradeId = Number(id)
   const db = getDb()
+
+  const tradeRow = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', tradeId, session.u)
+  if (!tradeRow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const cached = dbGet<CacheRow>(db, 'SELECT * FROM analysis_cache WHERE trade_id = ?', tradeId)
   if (cached && Date.now() - new Date(cached.cached_at).getTime() < CACHE_TTL_MS) {
     return NextResponse.json(JSON.parse(cached.result))
   }
 
-  const tradeRow = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', tradeId)
-  if (!tradeRow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
   const journalRows = dbAll<JournalRow>(db, 'SELECT * FROM journal_entries WHERE trade_id = ?', tradeId)
-  const recentRows = dbAll<TradeRow>(db, 'SELECT * FROM trades ORDER BY opened_at DESC LIMIT 20')
+  const recentRows = dbAll<TradeRow>(db, 'SELECT * FROM trades WHERE user_id = ? ORDER BY opened_at DESC LIMIT 20', session.u)
 
   const trade = rowToTrade(tradeRow)
   const journalEntries: JournalEntry[] = journalRows.map(j => ({

@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb, dbGet, rowToTrade, type TradeRow } from '@/lib/db'
 import { calcPnl, calcRR } from '@/lib/calc'
+import { getSession } from '@/lib/auth-server'
 import fs from 'fs'
 import path from 'path'
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const db = getDb()
-  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))
+  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', Number(id), session.u)
   if (!trade) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(rowToTrade(trade))
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const db = getDb()
-  const existing = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))
+  const existing = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', Number(id), session.u)
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
@@ -44,10 +49,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   return NextResponse.json(rowToTrade(updated))
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const db = getDb()
-  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))
+  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', Number(id), session.u)
   if (!trade) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   if (trade.screenshot_url) {

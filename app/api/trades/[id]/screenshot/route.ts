@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb, dbGet, type TradeRow } from '@/lib/db'
+import { getSession } from '@/lib/auth-server'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const db = getDb()
-  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))
+  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', Number(id), session.u)
   if (!trade) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const formData = await request.formData()
@@ -36,10 +39,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return NextResponse.json({ screenshotUrl })
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const db = getDb()
-  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))
+  const trade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ? AND user_id = ?', Number(id), session.u)
   if (!trade) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   if (trade.screenshot_url) {
