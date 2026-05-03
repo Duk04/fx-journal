@@ -31,14 +31,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   let pnl = existing.pnl
   let rr = existing.rr
 
+  let newClosedAt = body.closedAt !== undefined ? body.closedAt : existing.closed_at
   if (newExitPrice != null) {
     pnl = calcPnl({ pair: existing.pair, direction: existing.direction, entryPrice: existing.entry_price, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl })
     rr = newSl ? calcRR({ pair: existing.pair, direction: existing.direction, entryPrice: existing.entry_price, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl }) : null
+    if (!newClosedAt) newClosedAt = new Date().toISOString()
   }
 
   db.prepare(`UPDATE trades SET exit_price=?, closed_at=?, notes=?, tags=?, sl=?, tp=?, lot_size=?, pnl=?, rr=? WHERE id=?`).run(
     newExitPrice,
-    body.closedAt !== undefined ? body.closedAt : existing.closed_at,
+    newClosedAt,
     body.notes !== undefined ? body.notes : existing.notes,
     body.tags !== undefined ? JSON.stringify(body.tags) : existing.tags,
     newSl, body.tp !== undefined ? body.tp : existing.tp,

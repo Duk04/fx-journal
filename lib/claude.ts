@@ -90,8 +90,10 @@ export async function analyzeTradeWithClaude(
     messages: [{ role: 'user', content: contentBlocks }],
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-  const parsed = JSON.parse(text)
+  const raw = response.content[0].type === 'text' ? response.content[0].text : '{}'
+  const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+  let parsed: { summary?: string; patterns?: string[]; suggestions?: string[] } = {}
+  try { parsed = JSON.parse(text) } catch { parsed = {} }
 
   return {
     tradeId: trade.id,

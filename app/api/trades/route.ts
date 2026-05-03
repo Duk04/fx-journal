@@ -42,16 +42,18 @@ export async function POST(request: NextRequest) {
   let pnl: number | null = null
   let rr: number | null = null
 
+  let resolvedClosedAt = closedAt ?? null
   if (exitPrice != null) {
     pnl = calcPnl({ pair, direction, entryPrice, exitPrice, lotSize, sl })
     rr = sl ? calcRR({ pair, direction, entryPrice, exitPrice, lotSize, sl }) : null
+    if (!resolvedClosedAt) resolvedClosedAt = new Date().toISOString()
   }
 
   const db = getDb()
   const result = db.prepare(`
     INSERT INTO trades (user_id, pair, direction, entry_price, exit_price, lot_size, sl, tp, opened_at, closed_at, pnl, rr, notes, tags)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(userId, pair, direction, entryPrice, exitPrice ?? null, lotSize, sl ?? null, tp ?? null, openedAt, closedAt ?? null, pnl, rr, notes ?? null, JSON.stringify(tags ?? []))
+  `).run(userId, pair, direction, entryPrice, exitPrice ?? null, lotSize, sl ?? null, tp ?? null, openedAt, resolvedClosedAt, pnl, rr, notes ?? null, JSON.stringify(tags ?? []))
 
   const newTrade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', result.lastInsertRowid)!
   return NextResponse.json(rowToTrade(newTrade), { status: 201 })

@@ -4,12 +4,12 @@ import { useTrades } from '@/hooks/use-trades'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Link from 'next/link'
-import type { Trade } from '@/types'
 import { TrendingUp, Target, Activity, AlertTriangle, Zap, BarChart2, Plus } from 'lucide-react'
 
 export default function DashboardPage() {
   const { data: stats, isLoading } = useStats()
   const { data: trades = [] } = useTrades({ status: 'closed' })
+  const { data: openTrades = [] } = useTrades({ status: 'open' })
 
   const equityData = [...trades]
     .sort((a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime())
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   if (isLoading) return <LoadingScreen />
 
   const pnlPositive = (stats?.totalPnl ?? 0) >= 0
-  const openCount = trades.filter((t: Trade) => !t.closedAt).length
+  const openCount = openTrades.length
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

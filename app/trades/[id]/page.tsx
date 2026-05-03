@@ -34,6 +34,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   const [journalContent, setJournalContent] = useState('')
   const [journalMood, setJournalMood] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   if (isLoading) return <div style={{ color: '#64748b', padding: '2rem' }}>Loading...</div>
   if (!trade) return <div style={{ color: '#64748b', padding: '2rem' }}>Trade not found.</div>
@@ -42,11 +43,20 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const fd = new FormData()
-    fd.append('screenshot', file)
-    await fetch(`/api/trades/${tradeId}/screenshot`, { method: 'POST', body: fd })
-    qc.invalidateQueries({ queryKey: ['trade', tradeId] })
-    setUploading(false)
+    setUploadError('')
+    try {
+      const fd = new FormData()
+      fd.append('screenshot', file)
+      const res = await fetch(`/api/trades/${tradeId}/screenshot`, { method: 'POST', body: fd })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setUploadError(data.error ?? 'Upload failed')
+        return
+      }
+      qc.invalidateQueries({ queryKey: ['trade', tradeId] })
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleAddJournal = async () => {
@@ -135,6 +145,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
               onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = '#cbd5e1')}>
               <p style={{ color: '#475569', marginBottom: 6, fontWeight: 500 }}>{uploading ? 'Uploading...' : 'Click to upload screenshot'}</p>
               <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>JPG, PNG, WebP · max 10 MB</p>
+              {uploadError && <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: 6 }}>{uploadError}</p>}
             </div>
             <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleScreenshot} style={{ display: 'none' }} />
           </label>
