@@ -43,6 +43,36 @@ export function checkPassword(pw: string, stored: string): boolean {
   }
 }
 
+// ── Sessions ──────────────────────────────────────────────────────────────────
+
+export interface SessionInfo {
+  u: number    // userId
+  n: string    // username
+}
+
+export function createSession(db: DatabaseSync, userId: number, username: string): string {
+  const id = randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  db.prepare('INSERT INTO sessions (id, user_id, username, expires_at) VALUES (?, ?, ?, ?)').run(id, userId, username, expiresAt)
+  return id
+}
+
+export function getSessionInfo(db: DatabaseSync, sessionId: string): SessionInfo | null {
+  const row = dbGet<{ user_id: number; username: string; expires_at: string }>(db, 'SELECT user_id, username, expires_at FROM sessions WHERE id = ?', sessionId)
+  if (!row) return null
+  if (new Date(row.expires_at) < new Date()) {
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId)
+    return null
+  }
+  return { u: row.user_id, n: row.username }
+}
+
+export function deleteSession(db: DatabaseSync, sessionId: string): void {
+  db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId)
+}
+
+// ── Schema ────────────────────────────────────────────────────────────────────
+
 function initSchema(db: DatabaseSync) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS trades (
@@ -84,15 +114,20 @@ function initSchema(db: DatabaseSync) {
       password_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
   `)
 
   seedUsers(db)
 
-  // Migrations: add user_id columns if not present yet
   try { db.exec('ALTER TABLE trades ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
   try { db.exec('ALTER TABLE journal_entries ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
 
-  // Assign any legacy rows (from before auth) to the first user
   const first = db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get() as { id: number } | undefined
   if (first) {
     db.exec(`UPDATE trades SET user_id = ${first.id} WHERE user_id IS NULL`)

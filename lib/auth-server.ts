@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers'
-import { verifyToken, SESSION_COOKIE, type SessionPayload } from './session'
+import { SESSION_COOKIE } from './session'
+import { getDb, getSessionInfo, type SessionInfo } from './db'
 
-export async function getSession(): Promise<SessionPayload | null> {
+export async function getSession(): Promise<SessionInfo | null> {
   const store = await cookies()
-  const token = store.get(SESSION_COOKIE)?.value
-  if (!token) return null
-  return verifyToken(token)
+  const sessionId = store.get(SESSION_COOKIE)?.value
+  if (!sessionId) return null
+  return getSessionInfo(getDb(), sessionId)
 }
