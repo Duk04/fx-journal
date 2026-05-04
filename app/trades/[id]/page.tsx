@@ -1,21 +1,29 @@
 'use client'
 import { use, useState } from 'react'
-import { useTrade } from '@/hooks/use-trades'
+import { useTrade, useUpdateTrade } from '@/hooks/use-trades'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { JournalEntry, TradeAnalysis } from '@/types'
 import Image from 'next/image'
-import { Sparkles, ImagePlus, X, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { Sparkles, ImagePlus, X, ChevronRight, Pencil, CheckCircle, Clock } from 'lucide-react'
 
 const MOOD_COLOR: Record<string, string> = {
   confident: 'var(--pos)', uncertain: 'var(--amber)',
   fearful: 'var(--neg)', greedy: 'var(--purple)',
 }
 
+function nowLocal() {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 16)
+}
+
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const tradeId = Number(id)
   const { data: trade, isLoading } = useTrade(tradeId)
+  const updateTrade = useUpdateTrade(tradeId)
   const qc = useQueryClient()
 
   const { data: journal = [] } = useQuery<JournalEntry[]>({
@@ -37,6 +45,12 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   const [journalMood, setJournalMood] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+
+  // Close trade state
+  const [showClose, setShowClose] = useState(false)
+  const [closeExit, setCloseExit] = useState('')
+  const [closeAt, setCloseAt] = useState(nowLocal)
+  const [closing, setClosing] = useState(false)
 
   if (isLoading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 860 }}>
@@ -75,6 +89,18 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     qc.invalidateQueries({ queryKey: ['journal', tradeId] })
   }
 
+  const handleCloseTrade = async () => {
+    if (!closeExit) return
+    setClosing(true)
+    try {
+      await updateTrade.mutateAsync({
+        exitPrice: Number(closeExit),
+        closedAt: closeAt || undefined,
+      })
+      setShowClose(false)
+    } finally { setClosing(false) }
+  }
+
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 860 }}>
 
@@ -92,7 +118,50 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
           </span>
         )}
         {!trade.closedAt && <span className="badge badge-open">OPEN</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          {!trade.closedAt && (
+            <button onClick={() => setShowClose(v => !v)} className="btn btn-primary" style={{ fontSize: '0.78rem' }}>
+              <CheckCircle size={13} /> Close Trade
+            </button>
+          )}
+          <Link href={`/trades/${tradeId}/edit`} className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>
+            <Pencil size={13} /> Edit
+          </Link>
+        </div>
       </div>
+
+      {/* Close Trade inline form */}
+      {showClose && !trade.closedAt && (
+        <div className="card" style={{ background: 'rgba(0,212,133,0.05)', border: '1px solid rgba(0,212,133,0.2)' }}>
+          <p className="section-label" style={{ marginBottom: 12 }}>Close This Trade</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: 12 }}>
+            <div>
+              <label style={labelStyle}>Exit Price *</label>
+              <input type="number" step="any" value={closeExit} onChange={e => setCloseExit(e.target.value)}
+                className="input" placeholder="1.09200" autoFocus />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Closed At</label>
+                <button type="button" onClick={() => setCloseAt(nowLocal())} style={{
+                  display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.7rem',
+                  color: 'var(--cyan)', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}>
+                  <Clock size={10} /> Now
+                </button>
+              </div>
+              <input type="datetime-local" value={closeAt} onChange={e => setCloseAt(e.target.value)} className="input" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleCloseTrade} disabled={!closeExit || closing} className="btn btn-primary"
+              style={{ opacity: closeExit && !closing ? 1 : 0.5 }}>
+              {closing ? 'Closing...' : 'Confirm Close'}
+            </button>
+            <button onClick={() => setShowClose(false)} className="btn btn-ghost">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.65rem' }}>
@@ -122,6 +191,14 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
       {trade.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {trade.tags.map(tag => <span key={tag} className="badge badge-tag" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>{tag}</span>)}
+        </div>
+      )}
+
+      {/* Pre-trade Plan */}
+      {trade.plan && (
+        <div className="card" style={{ borderLeft: '2px solid rgba(139,92,246,0.5)' }}>
+          <p className="section-label">Trade Plan</p>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>{trade.plan}</p>
         </div>
       )}
 
@@ -262,4 +339,9 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
       </div>
     </div>
   )
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '0.7rem', fontWeight: 700,
+  color: 'var(--text-faint)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em',
 }

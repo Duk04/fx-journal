@@ -34,7 +34,10 @@ export function useCreateTrade() {
       if (!res.ok) throw new Error('Failed to create trade')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trades'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trades'] })
+      qc.invalidateQueries({ queryKey: ['stats'] })
+    },
   })
 }
 
@@ -53,6 +56,7 @@ export function useUpdateTrade(id: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['trades'] })
       qc.invalidateQueries({ queryKey: ['trade', id] })
+      qc.invalidateQueries({ queryKey: ['stats'] })
     },
   })
 }
@@ -64,6 +68,9 @@ export function useDeleteTrade() {
       const res = await fetch(`/api/trades/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete trade')
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['trades'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trades'] })
+      qc.invalidateQueries({ queryKey: ['stats'] })
+    },
   })
 }

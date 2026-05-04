@@ -24,27 +24,40 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
-  const newExitPrice = body.exitPrice !== undefined ? body.exitPrice : existing.exit_price
-  const newSl = body.sl !== undefined ? body.sl : existing.sl
-  const newLotSize = body.lotSize !== undefined ? body.lotSize : existing.lot_size
+
+  const newPair      = body.pair      !== undefined ? body.pair      : existing.pair
+  const newDirection = body.direction !== undefined ? body.direction : existing.direction
+  const newEntryPrice = body.entryPrice !== undefined ? body.entryPrice : existing.entry_price
+  const newExitPrice  = body.exitPrice  !== undefined ? body.exitPrice  : existing.exit_price
+  const newSl        = body.sl        !== undefined ? body.sl        : existing.sl
+  const newTp        = body.tp        !== undefined ? body.tp        : existing.tp
+  const newLotSize   = body.lotSize   !== undefined ? body.lotSize   : existing.lot_size
+  const newOpenedAt  = body.openedAt  !== undefined ? body.openedAt  : existing.opened_at
+  const newNotes     = body.notes     !== undefined ? body.notes     : existing.notes
+  const newPlan      = body.plan      !== undefined ? body.plan      : (existing as { plan?: string | null }).plan ?? null
+  const newTags      = body.tags      !== undefined ? JSON.stringify(body.tags) : existing.tags
 
   let pnl = existing.pnl
-  let rr = existing.rr
-
+  let rr  = existing.rr
   let newClosedAt = body.closedAt !== undefined ? body.closedAt : existing.closed_at
+
   if (newExitPrice != null) {
-    pnl = calcPnl({ pair: existing.pair, direction: existing.direction, entryPrice: existing.entry_price, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl })
-    rr = newSl ? calcRR({ pair: existing.pair, direction: existing.direction, entryPrice: existing.entry_price, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl }) : null
+    pnl = calcPnl({ pair: newPair, direction: newDirection, entryPrice: newEntryPrice, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl })
+    rr  = newSl ? calcRR({ pair: newPair, direction: newDirection, entryPrice: newEntryPrice, exitPrice: newExitPrice, lotSize: newLotSize, sl: newSl }) : null
     if (!newClosedAt) newClosedAt = new Date().toISOString()
+  } else if (body.exitPrice === null) {
+    pnl = null; rr = null; newClosedAt = null
   }
 
-  db.prepare(`UPDATE trades SET exit_price=?, closed_at=?, notes=?, tags=?, sl=?, tp=?, lot_size=?, pnl=?, rr=? WHERE id=?`).run(
-    newExitPrice,
-    newClosedAt,
-    body.notes !== undefined ? body.notes : existing.notes,
-    body.tags !== undefined ? JSON.stringify(body.tags) : existing.tags,
-    newSl, body.tp !== undefined ? body.tp : existing.tp,
-    newLotSize, pnl, rr, Number(id)
+  db.prepare(`
+    UPDATE trades SET
+      pair=?, direction=?, entry_price=?, exit_price=?, lot_size=?,
+      sl=?, tp=?, opened_at=?, closed_at=?, notes=?, plan=?, tags=?, pnl=?, rr=?
+    WHERE id=?
+  `).run(
+    newPair, newDirection, newEntryPrice, newExitPrice, newLotSize,
+    newSl, newTp, newOpenedAt, newClosedAt, newNotes, newPlan, newTags,
+    pnl, rr, Number(id)
   )
 
   const updated = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', Number(id))!

@@ -9,21 +9,21 @@ export async function GET(request: NextRequest) {
   const userId = session.u
 
   const { searchParams } = new URL(request.url)
-  const pair = searchParams.get('pair')
+  const pair      = searchParams.get('pair')
   const direction = searchParams.get('direction')
-  const dateFrom = searchParams.get('dateFrom')
-  const dateTo = searchParams.get('dateTo')
-  const status = searchParams.get('status')
+  const dateFrom  = searchParams.get('dateFrom')
+  const dateTo    = searchParams.get('dateTo')
+  const status    = searchParams.get('status')
 
   const db = getDb()
   const conditions: string[] = ['user_id = ?']
   const params: (string | number)[] = [userId]
 
-  if (pair) { conditions.push('pair = ?'); params.push(pair) }
-  if (direction) { conditions.push('direction = ?'); params.push(direction) }
-  if (dateFrom) { conditions.push('opened_at >= ?'); params.push(dateFrom) }
-  if (dateTo) { conditions.push('opened_at <= ?'); params.push(dateTo) }
-  if (status === 'open') conditions.push('closed_at IS NULL')
+  if (pair)      { conditions.push('pair = ?');        params.push(pair) }
+  if (direction) { conditions.push('direction = ?');   params.push(direction) }
+  if (dateFrom)  { conditions.push('opened_at >= ?');  params.push(dateFrom) }
+  if (dateTo)    { conditions.push('opened_at <= ?');  params.push(dateTo) }
+  if (status === 'open')   conditions.push('closed_at IS NULL')
   if (status === 'closed') conditions.push('closed_at IS NOT NULL')
 
   const where = 'WHERE ' + conditions.join(' AND ')
@@ -37,23 +37,23 @@ export async function POST(request: NextRequest) {
   const userId = session.u
 
   const body = await request.json()
-  const { pair, direction, entryPrice, exitPrice, lotSize, sl, tp, openedAt, closedAt, notes, tags } = body
+  const { pair, direction, entryPrice, exitPrice, lotSize, sl, tp, openedAt, closedAt, notes, plan, tags } = body
 
   let pnl: number | null = null
-  let rr: number | null = null
-
+  let rr:  number | null = null
   let resolvedClosedAt = closedAt ?? null
+
   if (exitPrice != null) {
     pnl = calcPnl({ pair, direction, entryPrice, exitPrice, lotSize, sl })
-    rr = sl ? calcRR({ pair, direction, entryPrice, exitPrice, lotSize, sl }) : null
+    rr  = sl ? calcRR({ pair, direction, entryPrice, exitPrice, lotSize, sl }) : null
     if (!resolvedClosedAt) resolvedClosedAt = new Date().toISOString()
   }
 
   const db = getDb()
   const result = db.prepare(`
-    INSERT INTO trades (user_id, pair, direction, entry_price, exit_price, lot_size, sl, tp, opened_at, closed_at, pnl, rr, notes, tags)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(userId, pair, direction, entryPrice, exitPrice ?? null, lotSize, sl ?? null, tp ?? null, openedAt, resolvedClosedAt, pnl, rr, notes ?? null, JSON.stringify(tags ?? []))
+    INSERT INTO trades (user_id, pair, direction, entry_price, exit_price, lot_size, sl, tp, opened_at, closed_at, pnl, rr, notes, plan, tags)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(userId, pair, direction, entryPrice, exitPrice ?? null, lotSize, sl ?? null, tp ?? null, openedAt, resolvedClosedAt, pnl, rr, notes ?? null, plan ?? null, JSON.stringify(tags ?? []))
 
   const newTrade = dbGet<TradeRow>(db, 'SELECT * FROM trades WHERE id = ?', result.lastInsertRowid)!
   return NextResponse.json(rowToTrade(newTrade), { status: 201 })

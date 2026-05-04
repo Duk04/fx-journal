@@ -46,8 +46,8 @@ export function checkPassword(pw: string, stored: string): boolean {
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
 export interface SessionInfo {
-  u: number    // userId
-  n: string    // username
+  u: number
+  n: string
 }
 
 export function createSession(db: DatabaseSync, userId: number, username: string): string {
@@ -121,12 +121,28 @@ function initSchema(db: DatabaseSync) {
       username TEXT NOT NULL,
       expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS trade_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      name TEXT NOT NULL,
+      pair TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      lot_size REAL,
+      sl REAL,
+      tp REAL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
 
   seedUsers(db)
 
+  // Migrations — safe to run multiple times
   try { db.exec('ALTER TABLE trades ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
   try { db.exec('ALTER TABLE journal_entries ADD COLUMN user_id INTEGER REFERENCES users(id)') } catch {}
+  try { db.exec('ALTER TABLE trades ADD COLUMN plan TEXT') } catch {}
 
   const first = db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').get() as { id: number } | undefined
   if (first) {
@@ -165,12 +181,13 @@ export interface TradeRow {
   pnl: number | null
   rr: number | null
   notes: string | null
+  plan: string | null
   tags: string
   screenshot_url: string | null
   created_at: string
 }
 
-import type { Trade } from '@/types'
+import type { Trade, TradeTemplate } from '@/types'
 
 export function rowToTrade(r: TradeRow): Trade {
   return {
@@ -187,8 +204,40 @@ export function rowToTrade(r: TradeRow): Trade {
     pnl: r.pnl,
     rr: r.rr,
     notes: r.notes,
+    plan: (r as { plan?: string | null }).plan ?? null,
     tags: JSON.parse(r.tags) as string[],
     screenshotUrl: r.screenshot_url,
+    createdAt: r.created_at,
+  }
+}
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+
+export interface TemplateRow {
+  id: number
+  user_id: number
+  name: string
+  pair: string
+  direction: string
+  lot_size: number | null
+  sl: number | null
+  tp: number | null
+  tags: string
+  notes: string | null
+  created_at: string
+}
+
+export function rowToTemplate(r: TemplateRow): TradeTemplate {
+  return {
+    id: r.id,
+    name: r.name,
+    pair: r.pair,
+    direction: r.direction,
+    lotSize: r.lot_size,
+    sl: r.sl,
+    tp: r.tp,
+    tags: JSON.parse(r.tags) as string[],
+    notes: r.notes,
     createdAt: r.created_at,
   }
 }

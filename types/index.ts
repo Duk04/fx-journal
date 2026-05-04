@@ -20,6 +20,7 @@ export interface Trade {
   pnl: number | null
   rr: number | null
   notes: string | null
+  plan: string | null
   tags: string[]
   screenshotUrl: string | null
   createdAt: string
@@ -47,6 +48,10 @@ export interface Stats {
   totalPnl: number
   avgRR: number
   maxDrawdown: number
+  profitFactor: number
+  expectancy: number
+  avgWin: number
+  avgLoss: number
   bestTrade: Trade | null
   worstTrade: Trade | null
   streaks: { current: number; best: number }
@@ -72,4 +77,38 @@ export interface TagStats {
   totalTrades: number
   winRate: number
   totalPnl: number
+}
+
+export interface SessionStats {
+  session: string
+  totalTrades: number
+  winRate: number
+  totalPnl: number
+  avgRR: number
+}
+
+export interface HourlyStats {
+  hour: number
+  totalTrades: number
+  winRate: number
+  totalPnl: number
+}
+
+export interface DailyPnl {
+  date: string
+  pnl: number
+  trades: number
+}
+
+export interface TradeTemplate {
+  id: number
+  name: string
+  pair: string
+  direction: string
+  lotSize: number | null
+  sl: number | null
+  tp: number | null
+  tags: string[]
+  notes: string | null
+  createdAt: string
 }

@@ -11,11 +11,20 @@ export async function GET(_: NextRequest) {
   const closed = dbAll<TradeRow>(db, 'SELECT * FROM trades WHERE user_id = ? AND pnl IS NOT NULL ORDER BY opened_at ASC', userId).map(rowToTrade)
 
   const totalTrades = closed.length
-  const wins = closed.filter(t => (t.pnl ?? 0) > 0)
+  const wins  = closed.filter(t => (t.pnl ?? 0) > 0)
+  const losses = closed.filter(t => (t.pnl ?? 0) < 0)
   const winRate = totalTrades > 0 ? wins.length / totalTrades : 0
-  const totalPnl = closed.reduce((s, t) => s + (t.pnl ?? 0), 0)
-  const rrTrades = closed.filter(t => t.rr !== null)
-  const avgRR = rrTrades.length > 0 ? rrTrades.reduce((s, t) => s + (t.rr ?? 0), 0) / rrTrades.length : 0
+
+  const totalPnl   = closed.reduce((s, t) => s + (t.pnl ?? 0), 0)
+  const rrTrades   = closed.filter(t => t.rr !== null)
+  const avgRR      = rrTrades.length > 0 ? rrTrades.reduce((s, t) => s + (t.rr ?? 0), 0) / rrTrades.length : 0
+
+  const grossProfit = wins.reduce((s, t) => s + (t.pnl ?? 0), 0)
+  const grossLoss   = Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0))
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0
+  const avgWin  = wins.length > 0  ? grossProfit / wins.length : 0
+  const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0
+  const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss)
 
   let peak = 0, equity = 0, maxDrawdown = 0
   for (const t of closed) {
@@ -26,7 +35,7 @@ export async function GET(_: NextRequest) {
   }
 
   const sorted = [...closed].sort((a, b) => (b.pnl ?? 0) - (a.pnl ?? 0))
-  const best = sorted[0] ?? null
+  const best  = sorted[0] ?? null
   const worst = sorted[sorted.length - 1] ?? null
 
   let bestStreak = 0, streak = 0, lastSign: number | null = null
@@ -46,5 +55,11 @@ export async function GET(_: NextRequest) {
     }
   }
 
-  return NextResponse.json({ totalTrades, winRate, totalPnl, avgRR, maxDrawdown, bestTrade: best, worstTrade: worst, streaks: { current: currentStreak, best: bestStreak } })
+  return NextResponse.json({
+    totalTrades, winRate, totalPnl, avgRR, maxDrawdown,
+    profitFactor: isFinite(profitFactor) ? profitFactor : 99.99,
+    expectancy, avgWin, avgLoss,
+    bestTrade: best, worstTrade: worst,
+    streaks: { current: currentStreak, best: bestStreak },
+  })
 }
