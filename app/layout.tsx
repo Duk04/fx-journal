@@ -14,7 +14,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
-      <body style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <body style={{ background: '#07090f', minHeight: '100vh' }}>
         <Providers>
           {session && <NavBar username={session.n} />}
           <main style={{ maxWidth: session ? 1200 : '100%', margin: '0 auto', padding: session ? '2rem 1.5rem' : '0' }}>

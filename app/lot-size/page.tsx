@@ -8,7 +8,6 @@ const PAIRS = [
   'XAUUSD', 'XAGUSD', 'BTCUSD', 'ETHUSD',
 ]
 
-// Price movement for 1 pip
 const PIP_SIZE: Record<string, number> = {
   EURUSD: 0.0001, GBPUSD: 0.0001, AUDUSD: 0.0001, NZDUSD: 0.0001,
   USDJPY: 0.01,   USDCHF: 0.0001, USDCAD: 0.0001,
@@ -18,7 +17,6 @@ const PIP_SIZE: Record<string, number> = {
   BTCUSD: 1,      ETHUSD: 0.1,
 }
 
-// USD value per 1 pip with 1.00 standard lot
 const PIP_VALUE: Record<string, number> = {
   EURUSD: 10,   GBPUSD: 10,   AUDUSD: 10,   NZDUSD: 10,
   USDJPY: 9.1,  USDCHF: 11,   USDCAD: 7.5,
@@ -67,7 +65,6 @@ export default function LotSizePage() {
     if (!slPips || slPips <= 0) return null
 
     const lotSize = riskAmount / (slPips * pipValue)
-    const pipValueAtLot = slPips * pipValue * lotSize / slPips  // = pipValue * lotSize
 
     return {
       lotSize,
@@ -93,15 +90,16 @@ export default function LotSizePage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.5rem' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.6), rgba(79,70,229,0.6))',
+          border: '1px solid rgba(139,92,246,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(124,58,237,0.3)',
+          boxShadow: '0 2px 12px rgba(139,92,246,0.25)',
         }}>
-          <Calculator size={18} color="#fff" strokeWidth={2} />
+          <Calculator size={18} color="#c4b5fd" strokeWidth={2} />
         </div>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>Lot Size Calculator</h1>
-          <p style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2 }}>Risk-based position sizing</p>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>Lot Size Calculator</h1>
+          <p style={{ color: 'var(--text-faint)', fontSize: '0.82rem', marginTop: 2 }}>Risk-based position sizing</p>
         </div>
       </div>
 
@@ -116,15 +114,15 @@ export default function LotSizePage() {
                 flex: '0 0 calc(25% - 5px)', minWidth: 0,
                 padding: '0.45rem 0.25rem', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600,
                 cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
-                background: pair === p ? '#f5f3ff' : '#f8fafc',
-                color: pair === p ? '#7c3aed' : '#64748b',
-                borderColor: pair === p ? '#ddd6fe' : '#e2e8f0',
+                background: pair === p ? 'rgba(139,92,246,0.12)' : 'var(--bg-2)',
+                color: pair === p ? '#c4b5fd' : 'var(--text-faint)',
+                borderColor: pair === p ? 'rgba(139,92,246,0.3)' : 'var(--border)',
               }}>{p}</button>
             ))}
           </div>
         </div>
 
-        <hr className="divider" />
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
         {/* Account balance */}
         <div>
@@ -139,9 +137,9 @@ export default function LotSizePage() {
               <button key={b} type="button" onClick={() => setBalance(String(b))} style={{
                 padding: '0.15rem 0.5rem', borderRadius: 5, fontSize: '0.7rem', fontWeight: 500,
                 cursor: 'pointer', border: '1px solid',
-                background: balance === String(b) ? '#f5f3ff' : '#f8fafc',
-                color: balance === String(b) ? '#7c3aed' : '#94a3b8',
-                borderColor: balance === String(b) ? '#ddd6fe' : '#e2e8f0',
+                background: balance === String(b) ? 'rgba(139,92,246,0.12)' : 'var(--bg-2)',
+                color: balance === String(b) ? '#c4b5fd' : 'var(--text-faint)',
+                borderColor: balance === String(b) ? 'rgba(139,92,246,0.3)' : 'var(--border)',
               }}>
                 {b >= 1000 ? `$${b / 1000}k` : `$${b}`}
               </button>
@@ -158,22 +156,22 @@ export default function LotSizePage() {
               onChange={e => setRiskPct(e.target.value)}
               className="input" style={{ maxWidth: 120 }} placeholder="1"
             />
-            <span style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>%</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>%</span>
             <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
               {RISK_PRESETS.map(r => (
                 <button key={r} type="button" onClick={() => setRiskPct(String(r))} style={{
                   padding: '0.3rem 0.55rem', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600,
                   cursor: 'pointer', border: '1px solid',
-                  background: riskPct === String(r) ? '#f5f3ff' : '#f8fafc',
-                  color: riskPct === String(r) ? '#7c3aed' : '#94a3b8',
-                  borderColor: riskPct === String(r) ? '#ddd6fe' : '#e2e8f0',
+                  background: riskPct === String(r) ? 'rgba(139,92,246,0.12)' : 'var(--bg-2)',
+                  color: riskPct === String(r) ? '#c4b5fd' : 'var(--text-faint)',
+                  borderColor: riskPct === String(r) ? 'rgba(139,92,246,0.3)' : 'var(--border)',
                 }}>{r}%</button>
               ))}
             </div>
           </div>
         </div>
 
-        <hr className="divider" />
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
         {/* SL mode toggle */}
         <div>
@@ -183,9 +181,9 @@ export default function LotSizePage() {
               <button key={m} type="button" onClick={() => setMode(m)} style={{
                 padding: '0.38rem 0.85rem', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
                 cursor: 'pointer', border: '1px solid', transition: 'all 0.12s',
-                background: mode === m ? '#eff6ff' : '#f8fafc',
-                color: mode === m ? '#2563eb' : '#64748b',
-                borderColor: mode === m ? '#bfdbfe' : '#e2e8f0',
+                background: mode === m ? 'rgba(0,196,238,0.1)' : 'var(--bg-2)',
+                color: mode === m ? 'var(--cyan)' : 'var(--text-faint)',
+                borderColor: mode === m ? 'rgba(0,196,238,0.25)' : 'var(--border)',
               }}>{m === 'price' ? 'Price levels' : 'Pips directly'}</button>
             ))}
           </div>
@@ -217,9 +215,13 @@ export default function LotSizePage() {
       </div>
 
       {/* Result */}
-      <div className="card" style={{ marginTop: '1rem', background: hasResult ? '#faf5ff' : '#f8fafc', borderColor: hasResult ? '#ddd6fe' : '#e2e8f0' }}>
+      <div className="card" style={{
+        marginTop: '1rem',
+        background: hasResult ? 'rgba(139,92,246,0.06)' : 'var(--surface)',
+        borderColor: hasResult ? 'rgba(139,92,246,0.25)' : 'var(--border)',
+      }}>
         {!hasResult ? (
-          <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem', margin: '0.5rem 0' }}>
+          <p style={{ textAlign: 'center', color: 'var(--text-faint)', fontSize: '0.875rem', margin: '0.5rem 0' }}>
             Fill in all fields above to see your position size.
           </p>
         ) : (
@@ -227,20 +229,20 @@ export default function LotSizePage() {
             {/* Main result */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#c4b5fd', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                   Recommended Lot Size
                 </p>
-                <p style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0', letterSpacing: '-0.03em', fontFamily: "'JetBrains Mono', monospace" }}>
+                <p className="mono" style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text)', margin: '4px 0 0', letterSpacing: '-0.03em' }}>
                   {result.lotSize.toFixed(2)}
                 </p>
               </div>
               <button onClick={copyLot} className="btn btn-ghost" style={{ gap: 6 }}>
-                {copied ? <Check size={14} color="#16a34a" /> : <Copy size={14} />}
+                {copied ? <Check size={14} color="var(--pos)" /> : <Copy size={14} />}
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
 
-            <hr className="divider" />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
             {/* Stats grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
@@ -249,18 +251,18 @@ export default function LotSizePage() {
               <Stat label="Pip Value" value={`$${fmt(result.pipValueAtLot, 2)}`} />
             </div>
 
-            <hr className="divider" />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '0.6rem 0.85rem', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Mini lots</p>
-                <p className="mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: '#475569', margin: '3px 0 0' }}>
+              <div style={{ background: 'var(--bg-2)', borderRadius: 8, padding: '0.6rem 0.85rem', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Mini lots</p>
+                <p className="mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-muted)', margin: '3px 0 0' }}>
                   {fmt(result.miniLots, 1)}
                 </p>
               </div>
-              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '0.6rem 0.85rem', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Micro lots</p>
-                <p className="mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: '#475569', margin: '3px 0 0' }}>
+              <div style={{ background: 'var(--bg-2)', borderRadius: 8, padding: '0.6rem 0.85rem', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Micro lots</p>
+                <p className="mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-muted)', margin: '3px 0 0' }}>
                   {fmt(result.microLots, 0)}
                 </p>
               </div>
@@ -269,8 +271,8 @@ export default function LotSizePage() {
         )}
       </div>
 
-      <p style={{ color: '#94a3b8', fontSize: '0.72rem', textAlign: 'center', marginTop: '0.75rem' }}>
-        Pip values are approximate. Verify with your broker's contract specs.
+      <p style={{ color: 'var(--text-faint)', fontSize: '0.72rem', textAlign: 'center', marginTop: '0.75rem' }}>
+        Pip values are approximate. Verify with your broker&apos;s contract specs.
       </p>
     </div>
   )
@@ -279,18 +281,18 @@ export default function LotSizePage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>{label}</p>
-      <p className="mono" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: '4px 0 0' }}>{value}</p>
+      <p style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>{label}</p>
+      <p className="mono" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '4px 0 0' }}>{value}</p>
     </div>
   )
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '0.78rem', fontWeight: 600,
-  color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em',
+  display: 'block', fontSize: '0.7rem', fontWeight: 700,
+  color: 'var(--text-faint)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em',
 }
 
 const subLabelStyle: React.CSSProperties = {
   display: 'block', fontSize: '0.75rem', fontWeight: 600,
-  color: '#94a3b8', marginBottom: 5, letterSpacing: '0.02em',
+  color: 'var(--text-faint)', marginBottom: 5, letterSpacing: '0.02em',
 }

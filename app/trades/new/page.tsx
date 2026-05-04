@@ -60,12 +60,12 @@ export default function NewTradePage() {
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
-        <Link href="/trades" style={{ display: 'flex', alignItems: 'center', color: '#64748b', textDecoration: 'none', padding: '0.25rem' }}>
+        <Link href="/trades" style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', textDecoration: 'none', padding: '0.25rem' }}>
           <ChevronLeft size={18} />
         </Link>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>New Trade</h1>
-          <p style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2 }}>Record a position</p>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>New Trade</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 2 }}>Record a position</p>
         </div>
       </div>
 
@@ -81,9 +81,9 @@ export default function NewTradePage() {
                   flex: '0 0 calc(25% - 5px)', minWidth: 0,
                   padding: '0.45rem 0.25rem', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600,
                   cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
-                  background: pair === p ? '#eff6ff' : '#f8fafc',
-                  color: pair === p ? '#2563eb' : '#64748b',
-                  borderColor: pair === p ? '#bfdbfe' : '#e2e8f0',
+                  background: pair === p ? 'rgba(0,196,238,0.1)' : 'var(--bg-2)',
+                  color: pair === p ? 'var(--cyan)' : 'var(--text-faint)',
+                  borderColor: pair === p ? 'rgba(0,196,238,0.3)' : 'var(--border)',
                 }}>{p}</button>
               ))}
             </div>
@@ -97,15 +97,15 @@ export default function NewTradePage() {
                 <button key={d} type="button" onClick={() => setDirection(d)} style={{
                   flex: 1, padding: '0.55rem', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700,
                   cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
-                  background: direction === d ? (d === 'BUY' ? '#dcfce7' : '#fee2e2') : '#f8fafc',
-                  color: direction === d ? (d === 'BUY' ? '#15803d' : '#b91c1c') : '#64748b',
-                  borderColor: direction === d ? (d === 'BUY' ? '#bbf7d0' : '#fecaca') : '#e2e8f0',
+                  background: direction === d ? (d === 'BUY' ? 'rgba(0,212,133,0.12)' : 'rgba(255,53,83,0.12)') : 'var(--bg-2)',
+                  color: direction === d ? (d === 'BUY' ? 'var(--pos)' : 'var(--neg)') : 'var(--text-faint)',
+                  borderColor: direction === d ? (d === 'BUY' ? 'rgba(0,212,133,0.3)' : 'rgba(255,53,83,0.3)') : 'var(--border)',
                 }}>{d}</button>
               ))}
             </div>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
           {/* Entry + Lot */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -123,9 +123,9 @@ export default function NewTradePage() {
                   <button key={l} type="button" onClick={() => setLotSize(l)} style={{
                     padding: '0.15rem 0.45rem', borderRadius: 5, fontSize: '0.7rem', fontWeight: 500,
                     cursor: 'pointer', border: '1px solid',
-                    background: lotSize === l ? '#eff6ff' : '#f8fafc',
-                    color: lotSize === l ? '#2563eb' : '#94a3b8',
-                    borderColor: lotSize === l ? '#bfdbfe' : '#e2e8f0',
+                    background: lotSize === l ? 'rgba(0,196,238,0.1)' : 'var(--bg-2)',
+                    color: lotSize === l ? 'var(--cyan)' : 'var(--text-faint)',
+                    borderColor: lotSize === l ? 'rgba(0,196,238,0.25)' : 'var(--border)',
                   }}>{l}</button>
                 ))}
               </div>
@@ -146,7 +146,7 @@ export default function NewTradePage() {
             </div>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
           {/* Opened At */}
           <div>
@@ -154,7 +154,7 @@ export default function NewTradePage() {
               <label style={{ ...labelStyle, marginBottom: 0 }}>Opened At *</label>
               <button type="button" onClick={() => setOpenedAt(nowLocal())} style={{
                 display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 500,
-                color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                color: 'var(--cyan)', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
               }}>
                 <Clock size={11} /> Now
               </button>
@@ -166,14 +166,14 @@ export default function NewTradePage() {
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
             <span style={{
               width: 18, height: 18, borderRadius: 5, border: '1.5px solid',
-              borderColor: isOpen ? '#e2e8f0' : '#2563eb',
-              background: isOpen ? '#f8fafc' : '#2563eb',
+              borderColor: isOpen ? 'var(--border)' : 'var(--cyan)',
+              background: isOpen ? 'var(--bg-2)' : 'var(--cyan)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.15s', flexShrink: 0,
             }} onClick={() => setIsOpen(v => !v)}>
               {!isOpen && <Check size={11} color="#fff" strokeWidth={3} />}
             </span>
-            <span style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>Trade is closed</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 500 }}>Trade is closed</span>
           </label>
 
           {/* Exit fields — shown only when closed */}
@@ -191,7 +191,7 @@ export default function NewTradePage() {
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: 0 }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
 
           {/* Tags */}
           <div>
@@ -203,9 +203,9 @@ export default function NewTradePage() {
                   <button key={t} type="button" onClick={() => toggleTag(t)} style={{
                     padding: '0.28rem 0.7rem', borderRadius: 20, fontSize: '0.78rem', fontWeight: 500,
                     cursor: 'pointer', transition: 'all 0.12s', border: '1px solid',
-                    background: active ? '#ede9fe' : '#f8fafc',
-                    color: active ? '#6d28d9' : '#64748b',
-                    borderColor: active ? '#ddd6fe' : '#e2e8f0',
+                    background: active ? 'rgba(139,92,246,0.12)' : 'var(--bg-2)',
+                    color: active ? '#a78bfa' : 'var(--text-faint)',
+                    borderColor: active ? 'rgba(139,92,246,0.3)' : 'var(--border)',
                     display: 'flex', alignItems: 'center', gap: 4,
                   }}>
                     {active && <Check size={10} strokeWidth={3} />}
@@ -237,6 +237,6 @@ export default function NewTradePage() {
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '0.78rem', fontWeight: 600,
-  color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em',
+  display: 'block', fontSize: '0.7rem', fontWeight: 700,
+  color: 'var(--text-faint)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em',
 }

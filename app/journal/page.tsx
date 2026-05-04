@@ -13,10 +13,10 @@ const MOODS: { key: Mood; emoji: string; label: string }[] = [
 ]
 
 const MOOD_STYLE: Record<string, { color: string; bg: string; border: string; borderL: string }> = {
-  confident: { color: '#15803d', bg: '#dcfce7', border: '#bbf7d0', borderL: '#16a34a' },
-  uncertain: { color: '#92400e', bg: '#fef3c7', border: '#fde68a', borderL: '#d97706' },
-  fearful:   { color: '#b91c1c', bg: '#fee2e2', border: '#fecaca', borderL: '#dc2626' },
-  greedy:    { color: '#6d28d9', bg: '#ede9fe', border: '#ddd6fe', borderL: '#7c3aed' },
+  confident: { color: 'var(--pos)',    bg: 'rgba(0,212,133,0.08)',   border: 'rgba(0,212,133,0.2)',   borderL: 'var(--pos)' },
+  uncertain: { color: 'var(--amber)',  bg: 'rgba(245,166,35,0.08)',  border: 'rgba(245,166,35,0.2)',  borderL: 'var(--amber)' },
+  fearful:   { color: 'var(--neg)',    bg: 'rgba(255,53,83,0.08)',   border: 'rgba(255,53,83,0.2)',   borderL: 'var(--neg)' },
+  greedy:    { color: 'var(--purple)', bg: 'rgba(139,92,246,0.08)',  border: 'rgba(139,92,246,0.2)',  borderL: 'var(--purple)' },
 }
 
 export default function JournalPage() {
@@ -47,15 +47,15 @@ export default function JournalPage() {
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 740 }}>
       <div>
-        <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>Journal</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 3 }}>Trading thoughts and reflections</p>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>Journal</h1>
+        <p style={{ color: 'var(--text-faint)', fontSize: '0.82rem', marginTop: 3 }}>Trading thoughts and reflections</p>
       </div>
 
       {/* Write */}
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <BookOpen size={14} color="#64748b" />
-          <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: '#64748b', fontWeight: 600, margin: 0 }}>New Entry</p>
+          <BookOpen size={14} color="var(--text-faint)" />
+          <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-faint)', fontWeight: 600, margin: 0 }}>New Entry</p>
         </div>
         <textarea
           value={content}
@@ -75,9 +75,9 @@ export default function JournalPage() {
                   style={{
                     padding: '0.3rem 0.7rem', borderRadius: 20, fontSize: '0.78rem', fontWeight: 500,
                     cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 4,
-                    background: active ? s.bg : '#f8fafc',
-                    color: active ? s.color : '#64748b',
-                    border: `1px solid ${active ? s.border : '#e2e8f0'}`,
+                    background: active ? s.bg : 'var(--bg-2)',
+                    color: active ? s.color : 'var(--text-faint)',
+                    border: `1px solid ${active ? s.border : 'var(--border)'}`,
                   }}>
                   {emoji} {label}
                 </button>
@@ -100,7 +100,8 @@ export default function JournalPage() {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <FilterBtn label="All" active={filterMood === ''} onClick={() => setFilterMood('')} />
         {MOODS.map(({ key: m, emoji, label }) => (
-          <FilterBtn key={m} label={`${emoji} ${label}`} active={filterMood === m} onClick={() => setFilterMood(m)} color={MOOD_STYLE[m].color} activeBg={MOOD_STYLE[m].bg} activeBorder={MOOD_STYLE[m].border} />
+          <FilterBtn key={m} label={`${emoji} ${label}`} active={filterMood === m} onClick={() => setFilterMood(m)}
+            color={MOOD_STYLE[m].color} activeBg={MOOD_STYLE[m].bg} activeBorder={MOOD_STYLE[m].border} />
         ))}
       </div>
 
@@ -113,12 +114,12 @@ export default function JournalPage() {
         <div className="card" style={{ textAlign: 'center', padding: '3.5rem' }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12, margin: '0 auto 12px',
-            background: '#ede9fe', border: '1px solid #ddd6fe',
+            background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <BookOpen size={20} color="#7c3aed" />
+            <BookOpen size={20} color="var(--purple)" />
           </div>
-          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No journal entries yet. Write your first thought above.</p>
+          <p style={{ color: 'var(--text-faint)', fontSize: '0.875rem' }}>No journal entries yet. Write your first thought above.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
@@ -127,10 +128,10 @@ export default function JournalPage() {
             const moodData = e.mood ? MOODS.find(m => m.key === e.mood) : null
             return (
               <div key={e.id} className="card" style={{
-                borderLeft: `3px solid ${ms ? ms.borderL : '#e2e8f0'}`,
+                borderLeft: `3px solid ${ms ? ms.borderL : 'var(--border-mid)'}`,
                 padding: '1rem 1.25rem',
               }}>
-                <p style={{ color: '#1e293b', lineHeight: 1.75, marginBottom: 10, fontSize: '0.88rem' }}>{e.content}</p>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.75, marginBottom: 10, fontSize: '0.88rem' }}>{e.content}</p>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   {e.mood && ms && moodData && (
                     <span style={{
@@ -141,9 +142,9 @@ export default function JournalPage() {
                       {moodData.emoji} {e.mood}
                     </span>
                   )}
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{formatDate(e.createdAt)}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>{formatDate(e.createdAt)}</span>
                   {e.tradeId && (
-                    <a href={`/trades/${e.tradeId}`} style={{ fontSize: '0.75rem', color: '#2563eb', textDecoration: 'none', marginLeft: 'auto', fontWeight: 500 }}>
+                    <a href={`/trades/${e.tradeId}`} style={{ fontSize: '0.75rem', color: 'var(--cyan)', textDecoration: 'none', marginLeft: 'auto', fontWeight: 500 }}>
                       Trade #{e.tradeId} →
                     </a>
                   )}
@@ -164,9 +165,9 @@ function FilterBtn({ label, active, onClick, color, activeBg, activeBorder }: {
     <button onClick={onClick} style={{
       padding: '0.32rem 0.85rem', borderRadius: 20, fontSize: '0.78rem', fontWeight: 500,
       cursor: 'pointer', transition: 'all 0.15s',
-      background: active ? (activeBg ?? '#eff6ff') : '#f8fafc',
-      color: active ? (color ?? '#2563eb') : '#64748b',
-      border: `1px solid ${active ? (activeBorder ?? '#bfdbfe') : '#e2e8f0'}`,
+      background: active ? (activeBg ?? 'rgba(0,196,238,0.1)') : 'var(--bg-2)',
+      color: active ? (color ?? 'var(--cyan)') : 'var(--text-faint)',
+      border: `1px solid ${active ? (activeBorder ?? 'rgba(0,196,238,0.25)') : 'var(--border)'}`,
     }}>{label}</button>
   )
 }
