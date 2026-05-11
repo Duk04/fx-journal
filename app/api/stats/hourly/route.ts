@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, dbAll, type TradeRow } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth-server'
 
 export async function GET(_: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const db = getDb()
-  const rows = dbAll<TradeRow>(db,
-    'SELECT * FROM trades WHERE user_id = ? AND pnl IS NOT NULL ORDER BY opened_at ASC',
-    session.u
-  )
+  const rows = await prisma.trade.findMany({
+    where: { userId: session.u, NOT: { pnl: null } },
+    orderBy: { openedAt: 'asc' },
+  })
 
   const map = new Map<number, { wins: number; total: number; pnl: number }>()
   for (let h = 0; h < 24; h++) map.set(h, { wins: 0, total: 0, pnl: 0 })
 
   for (const t of rows) {
-    const hour = new Date(t.opened_at).getUTCHours()
+    const hour = t.openedAt.getUTCHours()
     const e = map.get(hour)!
     e.total++
     e.pnl += t.pnl ?? 0

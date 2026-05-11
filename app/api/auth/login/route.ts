@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, dbGet, checkPassword, createSession, type UserRow } from '@/lib/db'
+import { checkPassword, createSession } from '@/lib/db'
 import { SESSION_COOKIE } from '@/lib/session'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
@@ -11,14 +12,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
-  const db = getDb()
-  const user = dbGet<UserRow>(db, 'SELECT * FROM users WHERE username = ?', username)
+  const user = await prisma.user.findUnique({ where: { username } })
 
-  if (!user || !checkPassword(password, user.password_hash)) {
+  if (!user || !checkPassword(password, user.passwordHash)) {
     return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 })
   }
 
-  const sessionId = createSession(db, user.id, user.username)
+  const sessionId = await createSession(user.id, user.username)
 
   const res = NextResponse.json({ ok: true, username: user.username })
   res.cookies.set(SESSION_COOKIE, sessionId, {

@@ -1,13 +1,40 @@
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique
+  passwordHash String         @map("password_hash")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  trades         Trade[]
+  sessions       Session[]
+  journalEntries JournalEntry[]
+  templates      TradeTemplate[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  userId    Int      @map("user_id")
+  username  String
+  expiresAt DateTime @map("expires_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
 model Trade {
   id            Int       @id @default(autoincrement())
+  userId        Int?      @map("user_id")
   pair          String
   direction     String
   entryPrice    Float     @map("entry_price")
@@ -20,10 +47,12 @@ model Trade {
   pnl           Float?
   rr            Float?
   notes         String?
+  plan          String?
   tags          String    @default("[]")
   screenshotUrl String?   @map("screenshot_url")
   createdAt     DateTime  @default(now()) @map("created_at")
 
+  user     User?          @relation(fields: [userId], references: [id])
   journal  JournalEntry[]
   analysis AnalysisCache?
 
@@ -33,11 +62,13 @@ model Trade {
 model JournalEntry {
   id        Int      @id @default(autoincrement())
   tradeId   Int?     @map("trade_id")
+  userId    Int?     @map("user_id")
   content   String
   mood      String?
   createdAt DateTime @default(now()) @map("created_at")
 
   trade Trade? @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+  user  User?  @relation(fields: [userId], references: [id])
 
   @@map("journal_entries")
 }
@@ -50,4 +81,22 @@ model AnalysisCache {
   trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
 
   @@map("analysis_cache")
+}
+
+model TradeTemplate {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  pair      String
+  direction String
+  lotSize   Float?   @map("lot_size")
+  sl        Float?
+  tp        Float?
+  tags      String   @default("[]")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("trade_templates")
 }

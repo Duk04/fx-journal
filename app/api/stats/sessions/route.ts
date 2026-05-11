@@ -1,31 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, dbAll, type TradeRow } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth-server'
 
-function getSession_name(openedAt: string): string {
-  const hour = new Date(openedAt).getUTCHours()
+function getTradingSession(openedAt: Date): string {
+  const hour = openedAt.getUTCHours()
   if (hour < 7)  return 'Asia'
   if (hour < 12) return 'London'
   if (hour < 21) return 'New York'
-  return 'Asia' // 21-24 UTC → early Asia
+  return 'Asia'
 }
 
 export async function GET(_: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const db = getDb()
-  const rows = dbAll<TradeRow>(db,
-    'SELECT * FROM trades WHERE user_id = ? AND pnl IS NOT NULL ORDER BY opened_at ASC',
-    session.u
-  )
+  const rows = await prisma.trade.findMany({
+    where: { userId: session.u, NOT: { pnl: null } },
+    orderBy: { openedAt: 'asc' },
+  })
 
   const ORDER = ['Asia', 'London', 'New York']
   const map = new Map<string, { wins: number; total: number; pnl: number; rr: number[] }>()
   for (const s of ORDER) map.set(s, { wins: 0, total: 0, pnl: 0, rr: [] })
 
   for (const t of rows) {
-    const s = getSession_name(t.opened_at)
+    const s = getTradingSession(t.openedAt)
     const e = map.get(s) ?? { wins: 0, total: 0, pnl: 0, rr: [] }
     e.total++
     e.pnl += t.pnl ?? 0

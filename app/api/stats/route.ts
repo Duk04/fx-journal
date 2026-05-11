@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, dbAll, rowToTrade, type TradeRow } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { rowToTrade } from '@/lib/db'
 import { getSession } from '@/lib/auth-server'
 
 export async function GET(_: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.u
 
-  const db = getDb()
-  const closed = dbAll<TradeRow>(db, 'SELECT * FROM trades WHERE user_id = ? AND pnl IS NOT NULL ORDER BY opened_at ASC', userId).map(rowToTrade)
+  const rows = await prisma.trade.findMany({
+    where: { userId: session.u, NOT: { pnl: null } },
+    orderBy: { openedAt: 'asc' },
+  })
+  const closed = rows.map(rowToTrade)
 
   const totalTrades = closed.length
-  const wins  = closed.filter(t => (t.pnl ?? 0) > 0)
+  const wins   = closed.filter(t => (t.pnl ?? 0) > 0)
   const losses = closed.filter(t => (t.pnl ?? 0) < 0)
   const winRate = totalTrades > 0 ? wins.length / totalTrades : 0
 
-  const totalPnl   = closed.reduce((s, t) => s + (t.pnl ?? 0), 0)
-  const rrTrades   = closed.filter(t => t.rr !== null)
-  const avgRR      = rrTrades.length > 0 ? rrTrades.reduce((s, t) => s + (t.rr ?? 0), 0) / rrTrades.length : 0
+  const totalPnl  = closed.reduce((s, t) => s + (t.pnl ?? 0), 0)
+  const rrTrades  = closed.filter(t => t.rr !== null)
+  const avgRR     = rrTrades.length > 0 ? rrTrades.reduce((s, t) => s + (t.rr ?? 0), 0) / rrTrades.length : 0
 
-  const grossProfit = wins.reduce((s, t) => s + (t.pnl ?? 0), 0)
-  const grossLoss   = Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0))
+  const grossProfit  = wins.reduce((s, t) => s + (t.pnl ?? 0), 0)
+  const grossLoss    = Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0))
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0
-  const avgWin  = wins.length > 0  ? grossProfit / wins.length : 0
-  const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0
-  const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss)
+  const avgWin       = wins.length > 0   ? grossProfit / wins.length   : 0
+  const avgLoss      = losses.length > 0 ? grossLoss   / losses.length : 0
+  const expectancy   = (winRate * avgWin) - ((1 - winRate) * avgLoss)
 
   let peak = 0, equity = 0, maxDrawdown = 0
   for (const t of closed) {
@@ -35,7 +38,7 @@ export async function GET(_: NextRequest) {
   }
 
   const sorted = [...closed].sort((a, b) => (b.pnl ?? 0) - (a.pnl ?? 0))
-  const best  = sorted[0] ?? null
+  const best  = sorted[0]  ?? null
   const worst = sorted[sorted.length - 1] ?? null
 
   let bestStreak = 0, streak = 0, lastSign: number | null = null

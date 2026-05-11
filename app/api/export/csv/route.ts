@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, dbAll, rowToTrade, type TradeRow } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { rowToTrade } from '@/lib/db'
 import { getSession } from '@/lib/auth-server'
 
 function esc(v: string | number | null | undefined): string {
@@ -20,20 +21,21 @@ export async function GET(request: NextRequest) {
   const dateFrom  = searchParams.get('dateFrom')
   const dateTo    = searchParams.get('dateTo')
 
-  const db = getDb()
-  const conditions: string[] = ['user_id = ?']
-  const params: (string | number)[] = [session.u]
-  if (pair)      { conditions.push('pair = ?');        params.push(pair) }
-  if (direction) { conditions.push('direction = ?');   params.push(direction) }
-  if (dateFrom)  { conditions.push('opened_at >= ?');  params.push(dateFrom) }
-  if (dateTo)    { conditions.push('opened_at <= ?');  params.push(dateTo) }
-  if (status === 'open')   conditions.push('closed_at IS NULL')
-  if (status === 'closed') conditions.push('closed_at IS NOT NULL')
-
-  const rows = dbAll<TradeRow>(db, `SELECT * FROM trades WHERE ${conditions.join(' AND ')} ORDER BY opened_at DESC`, ...params)
+  const rows = await prisma.trade.findMany({
+    where: {
+      userId: session.u,
+      ...(pair      && { pair }),
+      ...(direction && { direction }),
+      ...(dateFrom  && { openedAt: { gte: new Date(dateFrom) } }),
+      ...(dateTo    && { openedAt: { lte: new Date(dateTo) } }),
+      ...(status === 'open'   && { closedAt: null }),
+      ...(status === 'closed' && { NOT: { closedAt: null } }),
+    },
+    orderBy: { openedAt: 'desc' },
+  })
   const trades = rows.map(rowToTrade)
 
-  const headers = ['ID','Pair','Direction','Entry','Exit','Lots','SL','TP','Opened','Closed','P&L','R:R','Tags','Notes','Plan']
+  const headers = ['ID', 'Pair', 'Direction', 'Entry', 'Exit', 'Lots', 'SL', 'TP', 'Opened', 'Closed', 'P&L', 'R:R', 'Tags', 'Notes', 'Plan']
   const lines = [
     headers.join(','),
     ...trades.map(t => [
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
       esc(t.tags.join('; ')),
       esc(t.notes ?? ''),
       esc(t.plan ?? ''),
-    ].map(esc).join(','))
+    ].map(esc).join(',')),
   ]
 
   const csv = lines.join('\r\n')
